@@ -1,1 +1,2 @@
 D:\Project\Windows\linker\x64\Debug\linker.exe
+D:\Code\C++\linker\Windows\x64\Debug\linker.exe

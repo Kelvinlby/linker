@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\Project\Windows\linker\x64\Debug\linker.exe</FullPath>
+      <FullPath>D:\Code\C++\linker\Windows\x64\Debug\linker.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />
