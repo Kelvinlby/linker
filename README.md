@@ -10,7 +10,7 @@ linker makes it easy to send TCP message in command line.
 ## Installation
 Just download the rar and type command to use it.
 <br>
-You should add its path to environment variable `Path` if you want to use it in everywhere.
+You should add its path to environment variable `Path` if you want to use it everywhere.
 
 ## Building
 | platform | compiler |
