@@ -8,6 +8,9 @@ linker makes it easy to send TCP message in command line.
 - Linux(deb)
 
 ## Installation
+Just download the rar and type command to use it.
+<br>
+You should add its path to environment variable `Path` if you want to use it in everywhere.
 
 ## Building
 | platform | compiler |
