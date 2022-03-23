@@ -17,4 +17,5 @@ linker makes it easy to send TCP message in command line.
 
 ## License
 linker is licensed under GPL-v3.0
+<br>
 Refer to [LICENSE](https://github.com/Kelvinlby/linker/blob/main/LICENSE) for more information
