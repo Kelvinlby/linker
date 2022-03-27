@@ -25,12 +25,17 @@
 #include <csignal>
 #include "./inc/color.h"
  
-#pragma comment(lib,"wsock32.lib")
+//#pragma comment (lib,"wsock32.lib")
 #pragma comment (lib,"ws2_32.lib")
 
 // --- defination and vars
-#define version "1.0.0"
+#define VERSION "1.0.0"
+#define MSG_WAITALL 0x8
+char COMMAND_DISCONNECT[] = "linker_command__disconnect__Code_0xFF";
 static volatile int keepRunning = 1;
+
+// TODO 1.server端连接多个client
+//      2.解决server端键盘中断需要client端发送消息才能结束socket的问题
 
 // --- usings
 using namespace std;
@@ -43,7 +48,7 @@ void Send( SOCKET client, char send_buf[] );
 void Recv( SOCKET client, char send_buf[] );
 
 // --- set keyboard interrupt
-void sig_handler(int sig)
+void sig_handler( int sig )
 {
     if( sig == SIGINT )
     {
@@ -86,6 +91,7 @@ int server( const char* ip )
     int len;
     char send_buf[100];
     char recv_buf[100];
+    int timeout = 1000;  // 1s
 
     thread thread_send, thread_recv;
     WSADATA wsa_data;
@@ -109,15 +115,17 @@ int server( const char* ip )
     client = accept( server, ( SOCKADDR* ) &client_addr, &len );
     cout << GREEN <<  "[DONE]" << RESET << "  connected" << endl;
 
-    // contact
+    // start threads
     thread_send = thread( Send, client, send_buf );
     thread_recv = thread( Recv, client, recv_buf );
+
+    // wait for threads to finish
     thread_send.join();
     thread_recv.join();
 
     // disconnect
-    closesocket(server);
-    closesocket(client);
+    closesocket( server );
+    closesocket( client );
     WSACleanup();
 
     return 0;
@@ -125,20 +133,31 @@ int server( const char* ip )
 
 int client( const char* ip )
 {
+    char send_buf[100];
+    char recv_buf[100];
+
+    thread thread_send, thread_recv;
     WSADATA wsa_data;
+    SOCKET client;
+    SOCKADDR_IN client_addr;
+
     WSAStartup( MAKEWORD( 2, 2 ), &wsa_data );
 
-    SOCKET client;
     client = socket( AF_INET, SOCK_STREAM, 0 );
 
-    SOCKADDR_IN client_addr;
     memset( &client_addr, 0, sizeof( client_addr ) );
     client_addr.sin_family = AF_INET;
     client_addr.sin_addr.s_addr = inet_addr( ip );
     client_addr.sin_port = htons( 1234 );
     connect( client, (SOCKADDR*) &client_addr, sizeof( SOCKADDR ) );
 
-    // TODO 该写client的线程和收发函数了
+    thread_send = thread( Send, client, send_buf );
+    thread_recv = thread( Recv, client, recv_buf );
+
+    thread_send.join();
+    thread_recv.join();
+
+    closesocket( client );
     WSACleanup();
 
     return 0;
@@ -151,24 +170,38 @@ void Send( SOCKET client, char send_buf[] )
 
     while( keepRunning )
     {
+        cout << YELLOW << "send: ";
         cin >> send_buf;
+        cout << RESET << endl;
         send( client, send_buf, 100, 0 );
     }
 
-    cout << RED << " #$ --- disconnect --- $#" << RESET << endl;
+    // keyboard interrupt
+    send( client, COMMAND_DISCONNECT, 100, 0 );
+    cout << BOLDRED << "  -+-+------------ sender disconnect ------------+-+-" << RESET << endl;
 }
 
 void Recv( SOCKET client, char recv_buf[] )
 {
+    int len = 0;
     signal( SIGINT, sig_handler );
 
     while( keepRunning )
     {
-        recv( client, recv_buf, 100, 0 );
-        cout << recv_buf << endl;
+        len = recv( client, recv_buf, 100, MSG_WAITALL );
+        
+        if( strcmp( recv_buf, COMMAND_DISCONNECT ) == 0 )
+        {
+            keepRunning = 0;
+        }
+        else
+        {
+            cout << CYAN << "receive: " << recv_buf << RESET << endl;
+        }
     }
 
-    cout << RED << " #$ --- disconnect --- $#" << RESET << endl;
+    // keyboard interrupt
+    cout << BOLDRED << "  -+-+------------ receive disconnect ------------+-+-" << RESET << endl;
 }
 
 void about()
@@ -178,7 +211,7 @@ void about()
     cout << RESET << BOLDCYAN << "  | |" << BOLDRED << "|#|" << BOLDCYAN << "       | | __" << RESET << CYAN << "           -+-+-+-------------------+-+-+-" << endl;
     cout << RESET << BOLDCYAN << "  | | _  _ ___ | |/ / __  _ __" << endl;
     cout << RESET << BOLDCYAN << "  | || || '_  || | // __ \\ ' _] " << RESET << CYAN << " COPYRIGHT (C) 2022 Kelvin_LBY" << endl;
-    cout << RESET << BOLDCYAN << "  | || || | | ||   \\\\  __/| |   " << RESET << CYAN << " Version: " << version << endl;
+    cout << RESET << BOLDCYAN << "  | || || | | ||   \\\\  __/| |   " << RESET << CYAN << " Version: " << VERSION << endl;
     cout << RESET << BOLDCYAN << "  |_||_||_| |_||_|\\_\\\\___||_|  " << RESET << CYAN << "  License: GPL-v3.0\n" << endl;
     cout << RESET << MAGENTA << "  Github: https://github.com/Kelvinlby/linker" << endl;
     cout << RESET << endl;
