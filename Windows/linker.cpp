@@ -1,5 +1,5 @@
 ﻿/* **********************************************************************************
- *                                  linker 
+ *                                  linker
  *                       Copyright (C) 2022 Kelvin_LBY
  *
  *     This program is free software: you can redistribute it and/or modify it under
@@ -10,10 +10,8 @@
  *     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  *     FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- *     You should have received a copy of the GNU General Public License
- *     along with this program. If not, see <https://www.gnu.org/licenses/>.
- * 
- *     License: https://github.com/Kelvinlby/linker/LICENSE
+ *     You should have received a copy of the GNU General Public License along with
+ *     this program. If not, see <https://github.com/Kelvinlby/linker/LICENS>.
  * 
  * **********************************************************************************/
 
