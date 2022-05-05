@@ -29,7 +29,7 @@
 // --- defination and vars
 #define VERSION "1.0.0"
 #define MSG_WAITALL 0x8
-char COMMAND_DISCONNECT[] = "linker_command__disconnect__Code_0xFF";
+char COMMAND_DISCONNECT[] = "linker_0xFF";
 static volatile int keepRunning = 1;
 
 // TODO 1.server端连接多个client
@@ -42,8 +42,10 @@ using namespace std;
 void about();
 int server( const char* ip );
 int client( const char* ip );
-void Send( SOCKET client, char send_buf[] );
-void Recv( SOCKET client, char send_buf[] );
+void serv_send( SOCKET client, char send_buf[] );
+void serv_recv( SOCKET client, char send_buf[] );
+void client_send( SOCKET client, char send_buf[] );
+void client_recv( SOCKET client, char send_buf[] );
 
 // --- set keyboard interrupt
 void sig_handler( int sig )
@@ -111,11 +113,11 @@ int server( const char* ip )
     cout << YELLOW << "waiting for response ..." << RESET << endl;
     len = sizeof( SOCKADDR );
     client = accept( server, ( SOCKADDR* ) &client_addr, &len );
-    cout << GREEN <<  "[DONE]" << RESET << "  connected" << endl;
+    cout << GREEN << "  -+-+------------- connected -------------+-+-" << RESET << endl;
 
     // start threads
-    thread_send = thread( Send, client, send_buf );
-    thread_recv = thread( Recv, client, recv_buf );
+    thread_send = thread( serv_send, client, send_buf );
+    thread_recv = thread( serv_recv, client, recv_buf );
 
     // wait for threads to finish
     thread_send.join();
@@ -125,6 +127,8 @@ int server( const char* ip )
     closesocket( server );
     closesocket( client );
     WSACleanup();
+
+    cout << BOLDRED << "  -+-+------------ disconnected ------------+-+-" << RESET << endl;
 
     return 0;
 }
@@ -149,11 +153,11 @@ int client( const char* ip )
     client_addr.sin_port = htons( 1234 );
     connect( client, (SOCKADDR*) &client_addr, sizeof( SOCKADDR ) );
 
-    thread_send = thread( Send, client, send_buf );
-    thread_recv = thread( Recv, client, recv_buf );
+    thread_send = thread( client_send, client, send_buf );
+    thread_recv = thread( client_recv, client, recv_buf );
 
-    thread_send.join();
     thread_recv.join();
+    thread_send.join();
 
     closesocket( client );
     WSACleanup();
@@ -162,7 +166,7 @@ int client( const char* ip )
 }
 
 
-void Send( SOCKET client, char send_buf[] )
+void serv_send( SOCKET client, char send_buf[] )
 {
     signal( SIGINT, sig_handler );
 
@@ -179,7 +183,7 @@ void Send( SOCKET client, char send_buf[] )
     cout << BOLDRED << "  -+-+------------ sender disconnect ------------+-+-" << RESET << endl;
 }
 
-void Recv( SOCKET client, char recv_buf[] )
+void serv_recv( SOCKET client, char recv_buf[] )
 {
     int len = 0;
     signal( SIGINT, sig_handler );
@@ -187,7 +191,41 @@ void Recv( SOCKET client, char recv_buf[] )
     while( keepRunning )
     {
         len = recv( client, recv_buf, 100, MSG_WAITALL );
-        
+        cout << CYAN << "receive: " << recv_buf << RESET << endl;
+    }
+
+    // keyboard interrupt
+    cout << BOLDRED << "  -+-+------------ receive disconnect ------------+-+-" << RESET << endl;
+}
+
+void client_send( SOCKET client, char send_buf[] )
+{
+    signal( SIGINT, sig_handler );
+
+    while( keepRunning )
+    {
+        cout << YELLOW << "send: ";
+        cin >> send_buf;
+        cout << RESET << endl;
+        send( client, send_buf, 100, 0 );
+    }
+
+    // keyboard interrupt
+    // send( client, COMMAND_DISCONNECT, 100, 0 );
+    cout << BOLDRED << "  -+-+------------ sender disconnect ------------+-+-" << RESET << endl;
+}
+
+void client_recv( SOCKET client, char recv_buf[] )
+{
+    int len = 0;
+    // signal( SIGINT, sig_handler );
+
+    // while( keepRunning )
+    while( true )
+    {
+        len = recv( client, recv_buf, 100, MSG_WAITALL );
+        cout << CYAN << "receive: " << recv_buf << RESET << endl;
+
         if( strcmp( recv_buf, COMMAND_DISCONNECT ) == 0 )
         {
             keepRunning = 0;
@@ -216,13 +254,15 @@ void about()
 
     // user guide
     cout << YELLOW << "Usage" << RESET << endl;
-    cout << GREEN << "  linker <mode> <IP>" << RESET << endl;
-    cout << "\n  mode:" << endl;
+    cout << GREEN << "  linker <mode> <IP>\n" << RESET << endl;
+    cout << "  mode:" << endl;
     cout << "    server  ------  start linker as server" << endl;
     cout << "    client  ------  start linker as client" << endl;
     cout << "  IP:" << endl;
     cout << "    server mode: your IP" << endl;
     cout << "    client mode: IP of server\n" << endl;
+    cout << "  Exit:" << endl;
+    cout << "    keyboard interrupt ( e.g. Ctrl+Shif+C )\n" << endl;
     
     // return code
     cout << YELLOW << "Return Code" << RESET << endl;
